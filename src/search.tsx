@@ -3,21 +3,19 @@ import { useInput, Text, Box } from 'ink'
 import { Fzf } from 'fzf'
 import { Logger } from './utils/log.js'
 import { Todo, TodoStatus } from './utils/todo.js'
-import { TodoManager } from './utils/todo-manager.js'
 
 export default function Search({
   todos,
+  showHiddens,
+  showOlderThenOneWeek,
   onSelectedChanged,
 }: {
   todos: Todo[]
+  showHiddens: boolean
+  showOlderThenOneWeek: boolean
   onSelectedChanged: any
 }): JSX.Element {
-  const fzf = new Fzf(
-    todos
-      // .sort((a, b) => b.getCreatedOn().getTime() - a.getCreatedOn().getTime())
-      .map((item) => item.getTitle()),
-    { sort: false },
-  )
+  let fzf = null
   const [query, setQuery] = useState('')
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [results, setResults] = useState<
@@ -31,15 +29,24 @@ export default function Search({
   >([])
 
   useEffect(() => {
+    fzf = new Fzf(
+      todos
+        .filter((todo) => todo.getIsHidden() !== showHiddens)
+        // .sort((a, b) => b.getCreatedOn().getTime() - a.getCreatedOn().getTime())
+        .map((item) => item.getTitle()),
+      { sort: false },
+    )
     setResults(fzf.find(query))
     setSelectedIndex(0)
-  }, [query])
+  }, [query, todos, showHiddens, showOlderThenOneWeek])
+
+  useEffect(() => {
+    onSelectedChanged(todos[selectedIndex])
+  }, [setSelectedIndex])
 
   useInput((input, key) => {
-    Logger.info(
-      `useInput, input: ${input} key: ${JSON.stringify(key, undefined, 2)}`,
-    )
-    if (key.shift) {
+    Logger.info('useInpuit => SEARCH')
+    if (input === ' ' && key.shift) {
       Logger.info(
         `change status activate results[selected]: ${JSON.stringify(
           results[selectedIndex],
@@ -50,7 +57,6 @@ export default function Search({
       const currentTodo = todos.find(
         (item) => item.getTitle() === results[selectedIndex]!.item,
       )
-      Logger.info(`####current todo: ${JSON.stringify(currentTodo)}`)
       currentTodo?.toggleStatus()
       return
     }
@@ -65,7 +71,6 @@ export default function Search({
     } else if (!key.ctrl && !key.meta && !key.escape) {
       setQuery((prev) => prev + input)
     }
-    onSelectedChanged(todos[selectedIndex])
   })
 
   return (
@@ -82,7 +87,6 @@ export default function Search({
           {'🔍'} {query}
         </Text>
       </Box>
-
       {results.length === 0 ? noResult() : hasResults()}
     </Box>
   )
@@ -100,6 +104,9 @@ export default function Search({
         TodoStatus.DONE
           ? '[✔] '
           : '[ ] '}
+        {todos.find((todoItem) => todoItem.getTitle() === item)?.getIsHidden()
+          ? '🥷🏻'
+          : ''}
         {highlightMatch(item)}
       </Text>
     ))

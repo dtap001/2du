@@ -35,6 +35,10 @@ export default function Home({}: {}): JSX.Element {
   const [selectedTodo, setSelectedTodo] = useState<Todo>()
 
   useInput((input, key) => {
+    Logger.info(
+      `useInput, input: '${input}' key: ${JSON.stringify(key, undefined, 2)}`,
+    )
+    Logger.info("useInpuit => HOME")
     if (input === 'r' && key.ctrl) {
       setShowPopup(true)
       setTimeout(() => setShowPopup(false), 1000)
@@ -48,6 +52,10 @@ export default function Home({}: {}): JSX.Element {
       setShowSearch(false)
       setShowAddNewTemplate(false)
       setShowConfirmDelete(true)
+    }
+    if (input === 'w' && key.ctrl) {
+      Logger.info(`hiding todo: ${selectedTodo?.getTitle()}`)
+      selectedTodo?.toggleHidden()
     }
   })
 
@@ -109,6 +117,9 @@ export default function Home({}: {}): JSX.Element {
         >
           <Text>{'<ctrl-n> '}new todo</Text>
           <Text>{'<ctrl-d> '}delete todo</Text>
+          <Text>{'<ctrl-e> '}edit todo</Text>
+          <Text>{'<ctrl-h> '}hide/unhide todo</Text>
+          <Text>{'<ctrl-space> '}done/undone todo</Text>
         </Box>
         <Box
           flexDirection="column"
@@ -116,8 +127,11 @@ export default function Home({}: {}): JSX.Element {
           alignItems="stretch"
           justifyContent={'space-between'}
         >
-          <Text>{'<ctrl-e> '}edit todo</Text>
-          <Text>{'<ctrl-space> '}change todo status</Text>
+          <Text>{'<ctrl-x> '}show done todos older then 1 day</Text>
+          <Text>{'<ctrl-t> '}show today created todos</Text>
+          <Text>{'<ctrl-a> '}show hidden todos</Text>
+          <Text>{'<ctrl-o> '}show old todos</Text>
+          <Text>{'<esc> '}exit</Text>
         </Box>
       </Box>
       {showSearch ? searchTemplate() : null}
@@ -130,13 +144,14 @@ export default function Home({}: {}): JSX.Element {
     return (
       <Box flexDirection="column" padding={0} paddingTop={1} width="100%">
         <Divider title="Delete 2du confirm" />
-        <Box flexDirection="column" width={'60%'} alignItems="center">
+        <Box flexDirection="column" width={'100%'} alignItems="center">
           <Box
             borderColor="red"
             borderStyle={'bold'}
             flexDirection="column"
             alignItems="center"
             padding={0}
+            width={'50%'}
           >
             <Text bold> 🔥 Do you want to delete this todo?</Text>
             <Text> {selectedTodo?.getSummary()}</Text>
@@ -181,6 +196,8 @@ export default function Home({}: {}): JSX.Element {
         <Divider title="Search" />
         <Search
           todos={todos}
+          showHiddens={true}
+          showOlderThenOneWeek={true}
           onSelectedChanged={(todo: Todo) => {
             Logger.info('onSelectedChanged is called in search template')
             setSelectedTodo(todo)

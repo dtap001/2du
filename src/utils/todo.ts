@@ -1,3 +1,5 @@
+import { Logger } from './log.js'
+
 export class Todo {
   private id: string
   private createdOn: Date
@@ -5,6 +7,7 @@ export class Todo {
   private status: TodoStatus
   private history: TodoStatusHistoryItem[]
   private onChanged: any
+  private isHidden: boolean
 
   constructor(id: string, title: string, onChanged: any) {
     this.id = id
@@ -13,6 +16,7 @@ export class Todo {
     this.title = title
     this.status = TodoStatus.UNDONE
     this.history = []
+    this.isHidden = false
   }
 
   public getId(): string {
@@ -31,11 +35,25 @@ export class Todo {
     this.title = title
   }
 
+  public getIsHidden() {
+    return this.isHidden
+  }
+
+  public toggleHidden() {
+    Logger.info('isHidden:' + this.isHidden)
+    this.isHidden = this.isHidden ? false : true
+    Logger.info('isHidden:' + this.isHidden)
+
+    this.onChanged(this)
+  }
+
   public getStatus(): TodoStatus {
     return this.status
   }
   public getSummary() {
-    return ` ${this.getStatus() === TodoStatus.DONE ? '[✔]' : '[ ]'} ${this.getCreatedOn().toLocaleDateString()} ${this.getTitle()}`
+    return ` ${
+      this.getStatus() === TodoStatus.DONE ? '[✔]' : '[ ]'
+    } ${this.getCreatedOn().toLocaleDateString()} ${this.getTitle()}`
   }
 
   public getHistory(): TodoStatusHistoryItem[] {
@@ -55,6 +73,7 @@ export class Todo {
       title: this.title,
       status: this.status,
       history: this.history,
+      isHidden: this.isHidden,
     }
   }
 
@@ -63,6 +82,7 @@ export class Todo {
     todo.createdOn = new Date(data.createdOn)
     todo.status = data.status
     todo.history = data.history
+    todo.isHidden = data.isHidden
     return todo
   }
 

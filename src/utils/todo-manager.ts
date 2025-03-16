@@ -33,6 +33,7 @@ export class TodoManager {
       null,
       2,
     )
+    Logger.info(data)
     fs.writeFileSync(this.filePath, data, 'utf-8')
     if (this.onUpdateCallback) {
       this.onUpdateCallback()
@@ -51,6 +52,17 @@ export class TodoManager {
   }
 
   private static onChanged(item: Todo) {
+    // const allButChanged = this.todos.filter(
+    //   (item) => item.getId() === item.getId(),
+    // )
+    // this.todos = [...allButChanged, item]
+    Logger.info(
+      `TodoManager.onChanged item:${JSON.stringify(
+        item,
+        undefined,
+        2,
+      )} todos: ${JSON.stringify(this.todos, undefined, 2)}`,
+    )
     TodoManager.save()
   }
 
