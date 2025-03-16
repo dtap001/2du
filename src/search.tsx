@@ -27,15 +27,17 @@ export default function Search({ todos }: { todos: Todo[] }): JSX.Element {
     )
     if (key.shift) {
       Logger.info(
-        `change status eactivate results[selected]: ${JSON.stringify(
+        `change status activate results[selected]: ${JSON.stringify(
           results[selectedIndex],
           undefined,
           2,
         )}`,
       )
-      todos
-        .find((item) => item.getTitle() === results[selectedIndex])
-        ?.markAsDone()
+      const currentTodo = todos.find(
+        (item) => item.getTitle() === results[selectedIndex].item,
+      )
+      Logger.info(`####current todo: ${JSON.stringify(currentTodo)}`)
+      currentTodo?.toggleStatus()
       TodoManager.set(todos)
       return
     }
