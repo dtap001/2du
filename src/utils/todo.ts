@@ -1,13 +1,14 @@
-import { v4 as uuidv4 } from 'uuid'
 export class Todo {
   private id: string
   private createdOn: Date
   private title: string
   private status: TodoStatus
   private history: TodoStatusHistoryItem[]
+  private onChanged: any
 
-  constructor(title: string) {
-    this.id = uuidv4()
+  constructor(id: string, title: string, onChanged: any) {
+    this.id = id
+    this.onChanged = onChanged
     this.createdOn = new Date()
     this.title = title
     this.status = TodoStatus.UNDONE
@@ -33,21 +34,20 @@ export class Todo {
   public getStatus(): TodoStatus {
     return this.status
   }
+  public getSummary() {
+    return ` ${this.getStatus() === TodoStatus.DONE ? '[✔]' : '[ ]'} ${this.getCreatedOn().toLocaleDateString()} ${this.getTitle()}`
+  }
 
   public getHistory(): TodoStatusHistoryItem[] {
     return this.history
   }
   public toggleStatus() {
-    this.status === TodoStatus.UNDONE ? this.markAsDone() : this.markAsUndone()
+    this.status === TodoStatus.UNDONE
+      ? this.updateStatus(TodoStatus.DONE)
+      : this.updateStatus(TodoStatus.UNDONE)
+    this.onChanged(this)
   }
 
-  public markAsDone(): void {
-    this.updateStatus(TodoStatus.DONE)
-  }
-
-  public markAsUndone(): void {
-    this.updateStatus(TodoStatus.UNDONE)
-  }
   public toJSON(): object {
     return {
       id: this.id,
@@ -58,9 +58,9 @@ export class Todo {
     }
   }
 
-  public static fromJSON(data: any): Todo {
-    const todo = new Todo(data.title)
-    todo.createdOn = data.createdOn
+  public static fromJSON(data: any, onChanged: any): Todo {
+    const todo = new Todo(data.id, data.title, onChanged)
+    todo.createdOn = new Date(data.createdOn)
     todo.status = data.status
     todo.history = data.history
     return todo
@@ -73,6 +73,7 @@ export class Todo {
         oldStatus: this.status,
         newStatus: newStatus,
       }
+      this.history = []
       this.history.push(historyItem)
       this.status = newStatus
     }

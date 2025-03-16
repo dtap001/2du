@@ -7,6 +7,8 @@ import Divider from 'ink-divider'
 import { Todo } from './utils/todo.js'
 import CreateNew2duComponent from './create-new-2du.js'
 import { TodoManager } from './utils/todo-manager.js'
+import { Logger } from './utils/log.js'
+import { ConfirmInput } from '@inkjs/ui'
 
 const makeGradient = () => {
   const GRADIENT = [
@@ -29,6 +31,8 @@ export default function Home({}: {}): JSX.Element {
   const [showPopup, setShowPopup] = useState(false)
   const [showSearch, setShowSearch] = useState(true)
   const [showAddNewTemplate, setShowAddNewTemplate] = useState(false)
+  const [showConfirmDelete, setShowConfirmDelete] = useState(false)
+  const [selectedTodo, setSelectedTodo] = useState<Todo>()
 
   useInput((input, key) => {
     if (input === 'r' && key.ctrl) {
@@ -38,9 +42,26 @@ export default function Home({}: {}): JSX.Element {
     if (input === 'n' && key.ctrl) {
       setShowSearch(false)
       setShowAddNewTemplate(true)
+      setShowConfirmDelete(false)
+    }
+    if (input === 'd' && key.ctrl) {
+      setShowSearch(false)
+      setShowAddNewTemplate(false)
+      setShowConfirmDelete(true)
     }
   })
 
+  useEffect(() => {
+    const updateTodos = () => {
+      Logger.info('updateTodos called')
+      setTodos([...TodoManager.get()])
+    }
+
+    TodoManager.setOnUpdate(updateTodos)
+    return () => {
+      TodoManager.setOnUpdate(() => {})
+    }
+  }, [])
   return (
     <Box alignItems="center" flexDirection="column">
       {/* Popup */}
@@ -101,8 +122,42 @@ export default function Home({}: {}): JSX.Element {
       </Box>
       {showSearch ? searchTemplate() : null}
       {showAddNewTemplate ? addNewTemplate() : null}
+      {showConfirmDelete ? confirmDeleteTemplate() : null}
     </Box>
   )
+
+  function confirmDeleteTemplate() {
+    return (
+      <Box flexDirection="column" padding={0} paddingTop={1} width="100%">
+        <Divider title="Delete 2du confirm" />
+        <Box flexDirection="column" width={'60%'} alignItems="center">
+          <Box
+            borderColor="red"
+            borderStyle={'bold'}
+            flexDirection="column"
+            alignItems="center"
+            padding={0}
+          >
+            <Text bold> 🔥 Do you want to delete this todo?</Text>
+            <Text> {selectedTodo?.getSummary()}</Text>
+            <ConfirmInput
+              onConfirm={() => {
+                setShowConfirmDelete(false)
+                setShowSearch(true)
+                setShowAddNewTemplate(false)
+                TodoManager.delete(selectedTodo?.getId())
+              }}
+              onCancel={() => {
+                setShowConfirmDelete(false)
+                setShowSearch(true)
+                setShowAddNewTemplate(false)
+              }}
+            />
+          </Box>
+        </Box>
+      </Box>
+    )
+  }
 
   function addNewTemplate() {
     return (
@@ -113,7 +168,7 @@ export default function Home({}: {}): JSX.Element {
           onSubmit={() => {
             setShowAddNewTemplate(false)
             setShowSearch(true)
-            setTodos(TodoManager.get());
+            setTodos(TodoManager.get())
           }}
         />
       </Box>
@@ -124,7 +179,13 @@ export default function Home({}: {}): JSX.Element {
     return (
       <Box flexDirection="column" padding={0} paddingTop={1} width="100%">
         <Divider title="Search" />
-        <Search todos={todos} />
+        <Search
+          todos={todos}
+          onSelectedChanged={(todo: Todo) => {
+            Logger.info('onSelectedChanged is called in search template')
+            setSelectedTodo(todo)
+          }}
+        />
       </Box>
     )
   }

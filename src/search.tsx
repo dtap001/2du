@@ -1,11 +1,17 @@
 import React, { useState, useEffect, ReactNode } from 'react'
 import { useInput, Text, Box } from 'ink'
-import { Fzf, FzfResultItem } from 'fzf'
+import { Fzf } from 'fzf'
 import { Logger } from './utils/log.js'
 import { Todo, TodoStatus } from './utils/todo.js'
 import { TodoManager } from './utils/todo-manager.js'
 
-export default function Search({ todos }: { todos: Todo[] }): JSX.Element {
+export default function Search({
+  todos,
+  onSelectedChanged,
+}: {
+  todos: Todo[]
+  onSelectedChanged: any
+}): JSX.Element {
   const fzf = new Fzf(
     todos
       // .sort((a, b) => b.getCreatedOn().getTime() - a.getCreatedOn().getTime())
@@ -14,7 +20,15 @@ export default function Search({ todos }: { todos: Todo[] }): JSX.Element {
   )
   const [query, setQuery] = useState('')
   const [selectedIndex, setSelectedIndex] = useState(0)
-  const [results, setResults] = useState<FzfResultItem<string>[]>([])
+  const [results, setResults] = useState<
+    {
+      item: string
+      start: number
+      end: number
+      score: number
+      positions: {}
+    }[]
+  >([])
 
   useEffect(() => {
     setResults(fzf.find(query))
@@ -34,11 +48,10 @@ export default function Search({ todos }: { todos: Todo[] }): JSX.Element {
         )}`,
       )
       const currentTodo = todos.find(
-        (item) => item.getTitle() === results[selectedIndex].item,
+        (item) => item.getTitle() === results[selectedIndex]!.item,
       )
       Logger.info(`####current todo: ${JSON.stringify(currentTodo)}`)
       currentTodo?.toggleStatus()
-      TodoManager.set(todos)
       return
     }
     if (key.escape) {
@@ -52,6 +65,7 @@ export default function Search({ todos }: { todos: Todo[] }): JSX.Element {
     } else if (!key.ctrl && !key.meta && !key.escape) {
       setQuery((prev) => prev + input)
     }
+    onSelectedChanged(todos[selectedIndex])
   })
 
   return (
@@ -75,7 +89,8 @@ export default function Search({ todos }: { todos: Todo[] }): JSX.Element {
 
   function hasResults(): ReactNode {
     //Logger.info(`hasResults results: ${JSON.stringify(results, null, 2)}`)
-    return results.map(({ item, positions }, index) => (
+
+    return results.map(({ item }, index) => (
       <Text
         key={`${item}-${index}`}
         color={index === selectedIndex ? 'green' : 'white'}
