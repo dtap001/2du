@@ -9,7 +9,9 @@
   },
   "scripts": {
     "build": "tsc",
-    "dev": "tsc --watch",
+    "devBuild": "tsc --watch",
+    "devRun": "DEV=true node dist/cli.js",
+    "devLogs": "tail -f /tmp/2du-$(date +\"%Y-%m-%d\").log",
     "test": "prettier --check . && xo && ava"
   },
   "files": [
@@ -25,7 +27,8 @@
     "ink-select-input": "^6.0.0",
     "ink-table": "^3.1.0",
     "meow": "^11.0.0",
-    "react": "^18.2.0"
+    "react": "^18.2.0",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "@sindresorhus/tsconfig": "^3.0.1",

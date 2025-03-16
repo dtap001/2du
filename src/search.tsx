@@ -2,11 +2,16 @@ import React, { useState, useEffect, ReactNode } from 'react'
 import { useInput, Text, Box } from 'ink'
 import { Fzf, FzfResultItem } from 'fzf'
 import { Logger } from './utils/log.js'
+import { Todo, TodoStatus } from './utils/todo.js'
+import { TodoManager } from './utils/todo-manager.js'
 
-const items = ['Apple', 'Banana', 'Orange', 'Grapes', 'Watermelon']
-const fzf = new Fzf(items, { sort: true })
-
-export default function Search(): JSX.Element {
+export default function Search({ todos }: { todos: Todo[] }): JSX.Element {
+  const fzf = new Fzf(
+    todos
+      // .sort((a, b) => b.getCreatedOn().getTime() - a.getCreatedOn().getTime())
+      .map((item) => item.getTitle()),
+    { sort: false },
+  )
   const [query, setQuery] = useState('')
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [results, setResults] = useState<FzfResultItem<string>[]>([])
@@ -17,8 +22,24 @@ export default function Search(): JSX.Element {
   }, [query])
 
   useInput((input, key) => {
-    Logger.info(`useInfput, input: ${input} key: ${key}`)
-    if (key.return) {
+    Logger.info(
+      `useInput, input: ${input} key: ${JSON.stringify(key, undefined, 2)}`,
+    )
+    if (key.shift) {
+      Logger.info(
+        `change status eactivate results[selected]: ${JSON.stringify(
+          results[selectedIndex],
+          undefined,
+          2,
+        )}`,
+      )
+      todos
+        .find((item) => item.getTitle() === results[selectedIndex])
+        ?.markAsDone()
+      TodoManager.set(todos)
+      return
+    }
+    if (key.escape) {
       process.exit(0)
     } else if (key.upArrow) {
       setSelectedIndex((prev) => (prev === 0 ? results.length - 1 : prev - 1))
@@ -51,13 +72,17 @@ export default function Search(): JSX.Element {
   )
 
   function hasResults(): ReactNode {
-    Logger.info(`hasResults results: ${JSON.stringify(results, null, 2)}`)
+    //Logger.info(`hasResults results: ${JSON.stringify(results, null, 2)}`)
     return results.map(({ item, positions }, index) => (
       <Text
         key={`${item}-${index}`}
         color={index === selectedIndex ? 'green' : 'white'}
       >
         {index === selectedIndex ? '▶ ' : '  '}
+        {todos.find((todoItem) => todoItem.getTitle() === item)?.getStatus() ===
+        TodoStatus.DONE
+          ? '[✔] '
+          : '[ ] '}
         {highlightMatch(item)}
       </Text>
     ))
@@ -69,7 +94,7 @@ export default function Search(): JSX.Element {
   }
 
   function highlightMatch(item: string) {
-    Logger.info(`highlightMatch item: ${item}}`)
+    //Logger.info(`highlightMatch item: ${item}}`)
     return item.split('').map((char, index) => (
       <Text
         key={`${item}-${index}`}

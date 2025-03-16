@@ -4,6 +4,9 @@ import Gradient from 'ink-gradient'
 import BigText from 'ink-big-text'
 import Search from './search.js'
 import Divider from 'ink-divider'
+import { Todo } from './utils/todo.js'
+import CreateNew2duComponent from './create-new-2du.js'
+import { TodoManager } from './utils/todo-manager.js'
 
 const makeGradient = () => {
   const GRADIENT = [
@@ -21,13 +24,20 @@ const makeGradient = () => {
   }))
 }
 
-export default function Home(): JSX.Element {
+export default function Home({}: {}): JSX.Element {
+  const [todos, setTodos] = useState(TodoManager.get())
   const [showPopup, setShowPopup] = useState(false)
+  const [showSearch, setShowSearch] = useState(true)
+  const [showAddNewTemplate, setShowAddNewTemplate] = useState(false)
 
   useInput((input, key) => {
     if (input === 'r' && key.ctrl) {
       setShowPopup(true)
       setTimeout(() => setShowPopup(false), 1000)
+    }
+    if (input === 'n' && key.ctrl) {
+      setShowSearch(false)
+      setShowAddNewTemplate(true)
     }
   })
 
@@ -63,15 +73,12 @@ export default function Home(): JSX.Element {
           space={true}
         />
       </Gradient>
-
       <Box flexDirection="column" alignItems={'center'} width={'100%'}>
         <Text>This is the best todo app in the CLI world!</Text>
       </Box>
-
       <Box flexDirection="column" padding={0} width="100%">
         <Divider title="Help" />
       </Box>
-
       <Box flexDirection="row" paddingTop={1} width={'100%'}>
         <Box
           flexDirection="column"
@@ -92,11 +99,33 @@ export default function Home(): JSX.Element {
           <Text>{'<ctrl-space> '}change todo status</Text>
         </Box>
       </Box>
-
-      <Box flexDirection="column" padding={0} paddingTop={1} width="100%">
-        <Divider title="Search" />
-        <Search />
-      </Box>
+      {showSearch ? searchTemplate() : null}
+      {showAddNewTemplate ? addNewTemplate() : null}
     </Box>
   )
+
+  function addNewTemplate() {
+    return (
+      <Box flexDirection="column" padding={0} paddingTop={1} width="100%">
+        <Divider title="Create new 2du" />
+        <CreateNew2duComponent
+          todos={todos}
+          onSubmit={() => {
+            setShowAddNewTemplate(false)
+            setShowSearch(true)
+            setTodos(TodoManager.get());
+          }}
+        />
+      </Box>
+    )
+  }
+
+  function searchTemplate() {
+    return (
+      <Box flexDirection="column" padding={0} paddingTop={1} width="100%">
+        <Divider title="Search" />
+        <Search todos={todos} />
+      </Box>
+    )
+  }
 }
